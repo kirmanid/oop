@@ -52,6 +52,7 @@ class Panel {
         void addButton(Button button);
         Mat draw(Mat canvas);
         vector<bool> checkPressed();
+        void assignLocation(Point loc);
     private:
         vector<Button> buttons;
         Point location; // top left corner
@@ -67,7 +68,7 @@ Panel::Panel(Point _location, int _width){
     width = _width;
     color = Scalar(114,128,250);
     thickness = 1;
-    spacing = 7;
+    spacing = 5;
     margin = 5;
 }
 
@@ -138,7 +139,7 @@ void Button::checkPressed(){
         && click.lastClick.x > location.x
         && click.lastClick.x < location.x + width
         && click.lastClick.y > location.y
-        && click.lastClick.y < location.y +height
+        && click.lastClick.y < location.y + height
     ){
         pressed = true;
         click.handled = true;
@@ -151,6 +152,9 @@ void Button::assignLocation(Point loc){
     location = loc;
 }
 
+void Panel::assignLocation(Point loc){
+    location = loc;
+}
 
 Canvas::Canvas(int _height, int _width, Scalar _color, string _name){
     height = _height;
@@ -181,8 +185,8 @@ void Click::mouseCallback(int  event, int  x, int  y, int  flag, void *param){
 }
 
 int main (){
-    Canvas canv{768, 1024, Scalar{0,0,0}, "Le Window"};
-    Button but{Point{100,100}, 20, 200, "BRUH BUTTON"};
+    Canvas canv {768, 1024, Scalar{0,0,0}, "Le Window"};
+    Button but {Point{100,100}, 20, 200, "BRUH BUTTON"};
     Panel pan {Point{100,100}, 200};
 
     pan.addButton(but);
