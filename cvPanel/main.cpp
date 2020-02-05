@@ -7,7 +7,7 @@ using namespace cv;
 class Canvas {
     public:
         Canvas(int _height, int _width, Scalar _color, string name);
-        void draw();  
+        void drawAndWipe();  
         Mat mat;
         string getName();
         int keypress;
@@ -23,6 +23,7 @@ static class Click {
     public:
         static void mouseCallback(int event, int  x, int  y, int flag, void *param);
         Point lastClick;
+        Point lastPos;
         bool handled;
 } click;
 
@@ -32,14 +33,18 @@ class Button {
         Mat draw(Mat canvas); /// what's the right way to pass this by reference?
         void checkPressed();
         bool pressed;
+        void checkMousedOverAndHighlight();
         int getHeight();
         void assignLocation(Point loc);
     private:
+        bool pointInBounds(Point p, Point topLeftCorner, int width, int height);
         Point location; // top left corner
         int height;
         int width;
         int thickness;
+        int currentThickness;
         Scalar color;
+        Scalar textColor;
         string text;
         double fontSize;
         int margin;
@@ -52,6 +57,7 @@ class Panel {
         void addButton(Button button);
         Mat draw(Mat canvas);
         vector<bool> checkPressed();
+        void updateButtonHighlighting();
         void assignLocation(Point loc);
     private:
         vector<Button> buttons;
@@ -108,14 +114,22 @@ vector<bool> Panel::checkPressed(){
     return pressed;
 }
 
+void Panel::updateButtonHighlighting(){
+    for (unsigned int i = 0; i < buttons.size(); i++){
+        buttons[i].checkMousedOverAndHighlight();
+    }
+}
+
 Button::Button(Point _location, int _height, int _width, string _text){
     location = _location;
     height = _height;
     width = _width;
     text = _text;
     color = Scalar(114,236,250);
+    textColor = color;
     fontSize = 1.3;
     thickness = 1;
+    currentThickness = thickness;
     margin = 2;
     font = FONT_HERSHEY_PLAIN;
 }
@@ -124,9 +138,9 @@ Mat Button::draw(Mat canvas){
     Point oppositeCorner = location; //bottom left corner
     oppositeCorner.x += width;
     oppositeCorner.y += height;
-    rectangle(canvas, location, oppositeCorner, color, thickness);
+    rectangle(canvas, location, oppositeCorner, color, currentThickness);
     Rect textRoi = Rect(location.x + margin, location.y + margin, width - margin, height - margin);
-    putText(canvas(textRoi), text, Point(0, height - (margin * 2)), font, fontSize, color);
+    putText(canvas(textRoi), text, Point(0, height - (margin * 2)), font, fontSize, textColor);
     return canvas;
 }
 
@@ -134,18 +148,39 @@ int Button::getHeight(){
     return height;
 }
 
-void Button::checkPressed(){
-    if (!click.handled /// is there a better way to format these conditions?
-        && click.lastClick.x > location.x
-        && click.lastClick.x < location.x + width
-        && click.lastClick.y > location.y
-        && click.lastClick.y < location.y + height
+bool Button::pointInBounds(Point p, Point topLeftCorner, int width, int height){
+    if(
+        p.x > topLeftCorner.x
+        && p.x < topLeftCorner.x + width
+        && p.y > topLeftCorner.y
+        && p.y < topLeftCorner.y + height
     ){
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void Button::checkPressed(){
+    if (!click.handled && pointInBounds(click.lastClick, location, width, height)){
         pressed = true;
         click.handled = true;
     } else {
         pressed = false;
     }
+}
+
+void Button::checkMousedOverAndHighlight(){
+    Scalar highlightTextColor = Scalar(0,0,0);
+    int fillThickness = -1;
+    if (pointInBounds(click.lastPos, location, width, height)){
+        currentThickness = fillThickness;
+        textColor = highlightTextColor;
+    } else {
+        currentThickness = thickness;
+        textColor = color;
+    }
+    // You still need to call draw() after highlighting
 }
 
 void Button::assignLocation(Point loc){
@@ -161,7 +196,7 @@ Canvas::Canvas(int _height, int _width, Scalar _color, string _name){
     width = _width;
     color = _color;
     name = _name;
-    tick = 20; // in ms
+    tick = 10; // in ms
     mat = Mat(height, width, CV_8UC3, color);
     namedWindow(name, WINDOW_NORMAL);
     setMouseCallback(name, click.mouseCallback);
@@ -171,9 +206,10 @@ string Canvas::getName(){
     return name;
 }
 
-void Canvas::draw(){
+void Canvas::drawAndWipe(){
     imshow(name, mat);
     keypress = waitKey(tick);
+    mat = Mat(height, width, CV_8UC3, color);
 }
 
 void Click::mouseCallback(int  event, int  x, int  y, int  flag, void *param){
@@ -181,6 +217,10 @@ void Click::mouseCallback(int  event, int  x, int  y, int  flag, void *param){
         click.handled = false;
         click.lastClick.x = x;
         click.lastClick.y = y;
+    }
+    else if ( event == EVENT_MOUSEMOVE){
+        click.lastPos.x = x;
+        click.lastPos.y = y;
     }
 }
 
@@ -193,10 +233,11 @@ int main (){
     pan.addButton(but);
     pan.addButton(but);
 
-    pan.draw(canv.mat);
     do{
-        canv.draw();
+        canv.drawAndWipe();
         pan.checkPressed();
+        pan.updateButtonHighlighting();
+        pan.draw(canv.mat);
     }while(canv.keypress == 255); // aka while key not pressed
     return 0;
 }
