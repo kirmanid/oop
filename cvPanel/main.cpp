@@ -149,16 +149,11 @@ int Button::getHeight(){
 }
 
 bool Button::pointInBounds(Point p, Point topLeftCorner, int width, int height){
-    if(
-        p.x > topLeftCorner.x
-        && p.x < topLeftCorner.x + width
-        && p.y > topLeftCorner.y
-        && p.y < topLeftCorner.y + height
-    ){
-        return true;
-    } else {
-        return false;
-    }
+    return
+    p.x > topLeftCorner.x
+    && p.x < topLeftCorner.x + width
+    && p.y > topLeftCorner.y
+    && p.y < topLeftCorner.y + height;
 }
 
 void Button::checkPressed(){
@@ -223,7 +218,12 @@ void Click::mouseCallback(int  event, int  x, int  y, int  flag, void *param){
         click.lastPos.y = y;
     }
 }
+/*
+# TODO
 
+- widget base class from which panel and button are derived
+- epic function on click assignable per button
+*/
 int main (){
     Canvas canv {768, 1024, Scalar{0,0,0}, "Le Window"};
     Button but {Point{100,100}, 20, 200, "BRUH BUTTON"};
