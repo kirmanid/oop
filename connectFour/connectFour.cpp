@@ -2,15 +2,9 @@
 
  using namespace std;
 
- ConnectFour::ConnectFour(int rows, int cols): 
+ ConnectFour::ConnectFour(int rows, int cols, int connect): 
     board(cols,vector<Token>(rows, Token::none)),
-    numConnect{4}{
-    srand(time(NULL));
- }
-
- ConnectFour::ConnectFour(ConnectFour& cf){
-    board = cf.board;
-    numConnect = cf.numConnect;
+    numConnect{connect}{
     srand(time(NULL));
  }
 

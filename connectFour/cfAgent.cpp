@@ -2,50 +2,72 @@
 
 using namespace std;
 
+moveOption::moveOption(ConnectFour& game):
+    cf{game},
+    draws{0},
+    wins{0},
+    losses{0}
+    {}
+
 CFAgent::CFAgent(Token player, Token enemy):
     winUtility{1},
     drawUtility{0},
-    lossUtility{-1},
+    lossUtility{-5},
     agentPlayer{player},
     enemy{enemy}
     {}
 
-void CFAgent::simGame(moveOption move){
+Token CFAgent::whoCanWin(ConnectFour& game, Token turn){
+    vector<int> possMoves = game.getPossMoves();
+    for (int move : possMoves){
+        ConnectFour cf{game};
+        cf.addToken(move, turn);
+        Token winner = cf.whoWon();
+        if (winner != Token::none){
+            return winner;
+        }
+    }
+    return Token::none;
+}
+
+void CFAgent::simGame(moveOption& move){
     move.cf.addToken(move.columnMove, agentPlayer);
     Token turn = enemy;
-    while (move.cf.whoWon()==Token::none){
+    while (whoCanWin(move.cf, turn)==Token::none){
         if (move.cf.getPossMoves().size()==0){
             break;
         }
         move.cf.randMove(turn);
-        if (turn == enemy){
-            turn = agentPlayer;
-        } else {
-            turn = enemy;
-        }
+        turn = (turn == enemy)? agentPlayer : enemy;
     }
-    Token winner = move.cf.whoWon();
-    if (winner == Token::none){
+    // at this point, the winner is the current turn-holder
+    if (turn == Token::none){
         move.draws++;
-    } else if ( winner == agentPlayer){
+    } else if (turn == agentPlayer){
         move.wins++;
     } else {
         move.losses++;
     }
 }
 
-int CFAgent::bestMove(ConnectFour& game, int simsPerOption){
+int CFAgent::bestMove(ConnectFour& game, int simsPerOption){ 
     vector<int> possMoves = game.getPossMoves();
     if (possMoves.size() == 0){
         return -1; //board is full
     }
-    vector<moveOption> options;
+    int bestMove = 0;
+    double topUtility = simsPerOption*lossUtility - 1;
     for (int move : possMoves){
-        // moveOption option;
-        // ConnectFour cf{game};
-        // option.cf = cf;
-        // option.columnMove = move;
-        // // options.push_back(option);
+        moveOption option{game};
+        option.columnMove = move;
+        for (int i=0; i < simsPerOption; i++){
+            simGame(option);
+        }
+        option.moveUtility = winUtility * option.wins + lossUtility * option.losses + drawUtility * option.draws;
+        if (option.moveUtility > topUtility){
+            topUtility = option.moveUtility;
+            bestMove = option.columnMove;
+        }
     }
-    return 0;
+    return bestMove;
 }

@@ -19,8 +19,7 @@ private:
 public:
     int numCols() const;
     int numRows() const;
-    ConnectFour(int rows, int cols);
-    ConnectFour(ConnectFour& cf);
+    ConnectFour(int rows, int cols, int numConnect);
     void clearBoard();
     std::vector<std::vector<Token>> getBoard() const;
     bool canAddToken(int columnIndex) const;
