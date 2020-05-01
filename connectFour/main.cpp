@@ -1,11 +1,14 @@
 #include<iostream>
 #include"connectFour.h"
 #include"cfAgent.h"
+#include <opencv2/opencv.hpp>
+
 
 using namespace std;
+using namespace cv;
 
 void displayBoard(ConnectFour& cf){
-    for (int r=cf.numRows()-1; r >= 0; r-- ){
+    for (int r=cf.numRows()-1; r >= 0; r--){
         for (int c=0; c < cf.numCols(); c++){
             switch(cf.getBoard()[c][r]){
                 case Token::none : cout << "_|"; break;
@@ -20,6 +23,7 @@ void displayBoard(ConnectFour& cf){
 
 
 int main(){
+    Canvas canv {768, 1024, Scalar{0,0,0}, "Connect Four"}
     ConnectFour cf{6,7,4};
     CFAgent agent1{Token::player1, Token::player2};
     CFAgent agent2{Token::player2, Token::player1};
@@ -38,6 +42,11 @@ int main(){
         cf.addToken(a2best, Token::player2);
         displayBoard(cf);
         cout << "Player 2 placed a token in column " << a2best << endl;
+
+        canv.drawAndWipe();
+        pan.checkPressed();
+        
+        pan.draw(canv.mat);
     }
     cout << endl;
     switch (cf.whoWon()){
